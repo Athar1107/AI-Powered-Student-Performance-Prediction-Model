@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Performance Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .dashboard {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      transform: perspective(1000px) rotateY(5deg);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: perspective(1000px) rotateY(0deg) translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .chart-card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .performance-table {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      font-weight: 600;
+    }
+
+    .grade-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .grade-A { background: #27ae60; color: white; }
+    .grade-B { background: #f39c12; color: white; }
+    .grade-C { background: #e74c3c; color: white; }
+    .grade-F { background: #95a5a6; color: white; }
+
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      color: #333;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-btn">← Back to Home</a>
+  
+  <div class="dashboard">
+    <div class="header">
+      <h1>📊 Student Performance Dashboard</h1>
+      <p>Comprehensive analytics and insights</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">👥</span>
+        <div class="stat-value" id="totalStudents">0</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📈</span>
+        <div class="stat-value" id="avgScore">0%</div>
+        <div class="stat-label">Average Score</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏆</span>
+        <div class="stat-value" id="topPerformers">0</div>
+        <div class="stat-label">Top Performers</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⚠️</span>
+        <div class="stat-value" id="atRisk">0</div>
+        <div class="stat-label">At Risk</div>
+      </div>
+    </div>
+
+    <div class="charts-container">
+      <div class="chart-card">
+        <div class="chart-title">Grade Distribution</div>
+        <canvas id="gradeChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Performance Trends</div>
+        <canvas id="performanceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="performance-table">
+      <h3 style="margin-bottom: 20px; color: #333;">📋 Student Performance Records</h3>
+      <table id="studentsTable">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Quiz 1</th>
+            <th>Assignment 1</th>
+            <th>Midterm</th>
+            <th>Assignment 2</th>
+            <th>Assignment 3</th>
+            <th>Final</th>
+            <th>Total</th>
+            <th>Prediction</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let studentsData = JSON.parse(localStorage.getItem('studentsData') || '[]');
+    
+    function updateStats() {
+      const totalStudents = studentsData.length;
+      const avgScore = totalStudents > 0 ? 
+        (studentsData.reduce((sum, s) => sum + s.percentage, 0) / totalStudents).toFixed(1) : 0;
+      const topPerformers = studentsData.filter(s => s.percentage >= 85).length;
+      const atRisk = studentsData.filter(s => s.percentage < 60).length;
+
+      document.getElementById('totalStudents').textContent = totalStudents;
+      document.getElementById('avgScore').textContent = avgScore + '%';
+      document.getElementById('topPerformers').textContent = topPerformers;
+      document.getElementById('atRisk').textContent = atRisk;
+    }
+
+    function createGradeChart() {
+      const grades = { 'A': 0, 'B': 0, 'C': 0, 'F': 0 };
+      studentsData.forEach(student => {
+        const grade = student.prediction.charAt(0);
+        if (grades.hasOwnProperty(grade)) grades[grade]++;
+      });
+
+      const ctx = document.getElementById('gradeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(grades),
+          datasets: [{
+            data: Object.values(grades),
+            backgroundColor: ['#27ae60', '#f39c12', '#e67e22', '#e74c3c']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    function createPerformanceChart() {
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Quiz 1', 'Assign 1', 'Midterm', 'Assign 2', 'Assign 3', 'Final'],
+          datasets: [{
+            label: 'Average Scores',
+            data: [
+              studentsData.reduce((sum, s) => sum + s.quiz1, 0) / studentsData.length || 0,
+              studentsData.reduce((sum, s) => sum + s.assign1, 0) / studentsData.length || 0,
+              studentsData.reduce((sum, s) => sum + s.midterm, 0) / studentsData.length || 0,
+              studentsData.reduce((sum, s) => sum + s.assign2, 0) / studentsData.length || 0,
+              studentsData.reduce((sum, s) => sum + s.assign3, 0) / studentsData.length || 0,
+              studentsData.reduce((sum, s) => sum + s.final, 0) / studentsData.length || 0
+            ],
+            backgroundColor: 'rgba(102, 126, 234, 0.8)'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function populateTable() {
+      const tbody = document.getElementById('studentsTableBody');
+      tbody.innerHTML = '';
+      
+      studentsData.forEach((student, index) => {
+        const row = tbody.insertRow();
+        const gradeClass = `grade-${student.prediction.charAt(0)}`;
+        
+        row.innerHTML = `
+          <td>STU${String(index + 1).padStart(3, '0')}</td>
+          <td>${student.quiz1}</td>
+          <td>${student.assign1}</td>
+          <td>${student.midterm}</td>
+          <td>${student.assign2}</td>
+          <td>${student.assign3}</td>
+          <td>${student.final}</td>
+          <td><strong>${student.total}</strong></td>
+          <td><span class="grade-badge ${gradeClass}">${student.prediction}</span></td>
+        `;
+      });
+    }
+
+    // Initialize dashboard
+    updateStats();
+    if (studentsData.length > 0) {
+      createGradeChart();
+      createPerformanceChart();
+      populateTable();
+    }
+
+    // Listen for new data from prediction page
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'studentsData') {
+        studentsData = JSON.parse(e.newValue || '[]');
+        updateStats();
+        if (studentsData.length > 0) {
+          createGradeChart();
+          createPerformanceChart();
+          populateTable();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
