@@ -20,10 +20,46 @@ def home():
     with open('home.html', 'r', encoding='utf-8') as f:
         return f.read()
 
-@app.route('/predict')
-def predict_page():
-    with open('index.html', 'r', encoding='utf-8') as f:
-        return f.read()
+@app.route('/predict', methods=['GET', 'POST'])
+def predict():
+    if request.method == 'GET':
+        with open('index.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    
+    # POST request handling
+    elif request.method == 'POST':
+        try:
+            if not model or not preprocessor:
+                return jsonify({'error': 'Model not loaded properly'}), 500
+            
+            data = request.json
+            
+            # Create DataFrame with the exact column names expected by the model
+            df = pd.DataFrame([{
+                'Quiz01 [10]': float(data['quiz1']),
+                'Assignment01 [8]': float(data['assign1']),
+                'Midterm Exam [20]': float(data['midterm']),
+                'Assignment02 [12]': float(data['assign2']),
+                'Assignment03 [25]': float(data['assign3']),
+                'Final Exam [35]': float(data['final'])
+            }])
+            
+            # Preprocess and predict
+            X_processed = preprocessor.transform(df)
+            prediction = model.predict(X_processed)[0]
+            
+            # Calculate additional metrics
+            total = sum([float(data[key]) for key in ['quiz1', 'assign1', 'midterm', 'assign2', 'assign3', 'final']])
+            percentage = (total / 110) * 100
+            
+            return jsonify({
+                'prediction': prediction,
+                'total': round(total, 1),
+                'percentage': round(percentage, 1)
+            })
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
 
 @app.route('/sample')
 def sample_csv():
@@ -35,43 +71,9 @@ def dashboard():
     with open('dashboard.html', 'r', encoding='utf-8') as f:
         return f.read()
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        if not model or not preprocessor:
-            return jsonify({'error': 'Model not loaded properly'}), 500
-        
-        data = request.json
-        
-        # Create DataFrame with the exact column names expected by the model
-        df = pd.DataFrame([{
-            'Quiz01 [10]': float(data['quiz1']),
-            'Assignment01 [8]': float(data['assign1']),
-            'Midterm Exam [20]': float(data['midterm']),
-            'Assignment02 [12]': float(data['assign2']),
-            'Assignment03 [25]': float(data['assign3']),
-            'Final Exam [35]': float(data['final'])
-        }])
-        
-        # Preprocess and predict
-        X_processed = preprocessor.transform(df)
-        prediction = model.predict(X_processed)[0]
-        
-        # Calculate additional metrics
-        total = sum([float(data[key]) for key in ['quiz1', 'assign1', 'midterm', 'assign2', 'assign3', 'final']])
-        percentage = (total / 110) * 100
-        
-        return jsonify({
-            'prediction': prediction,
-            'total': round(total, 1),
-            'percentage': round(percentage, 1)
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
 @app.route('/predict_csv', methods=['POST'])
-def predict_csv():
+def predict_csv_route():
+
     try:
         if not model or not preprocessor:
             return jsonify({'error': 'Model not loaded properly'}), 500
